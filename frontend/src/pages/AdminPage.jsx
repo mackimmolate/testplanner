@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api, { isMockMode } from '../api';
 import clsx from 'clsx';
 
@@ -117,7 +118,14 @@ function AdminPage() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Planeringsverktyg (Admin)</h1>
+            <div className="flex items-center gap-4">
+                <Link to="/" className="text-gray-600 hover:text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                </Link>
+                <h1 className="text-3xl font-bold text-gray-800">Planeringsverktyg (Admin)</h1>
+            </div>
             {isMockMode && (
                 <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-200">
                     Demo Mode (Lokal data)
