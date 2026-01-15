@@ -25,21 +25,31 @@ function TVPage() {
 
   if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center text-4xl">Laddar...</div>;
 
-  // Group items
+  // Group items by Employee
   const groupedPlan = {};
   plan.forEach(item => {
-      const groupName = item.machine_group.name;
-      if (!groupedPlan[groupName]) {
-          groupedPlan[groupName] = { active: [], planned: [] };
+      const employeeName = item.employee.name; // Keep number? User said yes.
+      if (!groupedPlan[employeeName]) {
+          groupedPlan[employeeName] = {
+              employee: item.employee,
+              active: [],
+              planned: [],
+              isSick: false
+          };
       }
+      if (item.machine_group.name === 'Sjuk') {
+          groupedPlan[employeeName].isSick = true;
+      }
+
+      // Default to active unless explicitly planned
       if (item.status === 'active') {
-          groupedPlan[groupName].active.push(item);
+          groupedPlan[employeeName].active.push(item);
       } else {
-          groupedPlan[groupName].planned.push(item);
+          groupedPlan[employeeName].planned.push(item);
       }
   });
 
-  const sortedGroups = Object.keys(groupedPlan).sort();
+  const sortedEmployees = Object.keys(groupedPlan).sort();
 
   return (
     <div className="min-h-screen bg-gray-900 p-4 text-white">
@@ -65,43 +75,48 @@ function TVPage() {
           </div>
       </header>
 
-      {sortedGroups.length === 0 ? (
+      {sortedEmployees.length === 0 ? (
           <div className="flex h-[80vh] items-center justify-center text-3xl text-gray-500">
               Inga planerade aktiviteter för idag.
           </div>
       ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedGroups.map(groupName => {
-                const group = groupedPlan[groupName];
-                // Only show if there are items? Or shows empty group?
-                // The loop is based on plan items, so only groups with items exist.
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {sortedEmployees.map(name => {
+                const group = groupedPlan[name];
 
                 return (
-                    <div key={groupName} className="bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-700 flex flex-col">
-                        <div className="bg-gray-700 px-4 py-3 border-b border-gray-600 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-white truncate">{groupName}</h2>
+                    <div key={name} className={clsx(
+                        "rounded-xl shadow-lg overflow-hidden border flex flex-col",
+                        group.isSick
+                            ? "bg-red-900/20 border-red-500/50"
+                            : "bg-gray-800 border-gray-700"
+                    )}>
+                        <div className={clsx(
+                            "px-4 py-3 border-b flex justify-between items-center",
+                            group.isSick ? "bg-red-900/40 border-red-500/30" : "bg-gray-700 border-gray-600"
+                        )}>
+                            <h2 className="text-xl font-bold text-white truncate">
+                                {name} <span className="text-gray-400 text-sm ml-1">({group.employee.number})</span>
+                            </h2>
+                            {group.isSick && <span className="text-xs font-bold bg-red-600 px-2 py-1 rounded text-white">SJUK</span>}
                         </div>
 
                         <div className="p-4 flex-1 flex flex-col gap-4">
                             {/* Active Section */}
                             {group.active.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-green-400 uppercase tracking-wider mb-2">Pågående</h3>
-                                    <div className="flex flex-col gap-3">
-                                        {group.active.map(item => (
-                                            <div key={item.id} className="bg-gray-750 rounded-lg p-3 border-l-4 border-green-500 shadow-sm bg-gray-900/50">
-                                                <div className="text-lg font-bold text-white leading-tight mb-1">{item.article.name}</div>
-                                                <div className="flex justify-between items-center text-gray-300">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium">{item.employee.name}</span>
-                                                    </div>
-                                                    <div className="text-xl font-mono font-bold text-blue-300">
-                                                        Mål: {item.goal}
-                                                    </div>
+                                <div className="flex flex-col gap-3">
+                                    {group.active.map(item => (
+                                        <div key={item.id} className="bg-gray-900/50 rounded-lg p-3 border-l-4 border-green-500 shadow-sm">
+                                            <div className="text-xs text-green-400 uppercase font-bold mb-1 tracking-wider">{item.machine_group.name}</div>
+                                            <div className="text-lg font-bold text-white leading-tight mb-2">{item.article.name}</div>
+                                            <div className="flex justify-between items-center text-gray-300 border-t border-gray-700 pt-2">
+                                                <div className="text-xs text-gray-400">MÅL</div>
+                                                <div className="text-xl font-mono font-bold text-blue-300">
+                                                    {item.goal}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
@@ -111,13 +126,15 @@ function TVPage() {
                                     <h3 className="text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-2">Kommande</h3>
                                     <div className="flex flex-col gap-2">
                                         {group.planned.map(item => (
-                                            <div key={item.id} className="bg-gray-750/50 rounded p-2 border-l-2 border-yellow-500/50 flex justify-between items-center opacity-80">
-                                                <div className="truncate pr-2">
-                                                    <div className="text-sm font-medium text-gray-200 truncate">{item.article.name}</div>
-                                                    <div className="text-xs text-gray-400">{item.employee.name}</div>
-                                                </div>
-                                                <div className="text-sm font-mono text-gray-400 whitespace-nowrap">
-                                                    {item.goal > 0 ? item.goal : '-'} st
+                                            <div key={item.id} className="bg-gray-750/50 rounded p-2 border-l-2 border-yellow-500/50 opacity-80">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="truncate pr-2">
+                                                        <div className="text-xs text-gray-500 mb-0.5">{item.machine_group.name}</div>
+                                                        <div className="text-sm font-medium text-gray-200 truncate">{item.article.name}</div>
+                                                    </div>
+                                                    <div className="text-sm font-mono text-gray-400 whitespace-nowrap">
+                                                        {item.goal > 0 ? item.goal : '-'} st
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
