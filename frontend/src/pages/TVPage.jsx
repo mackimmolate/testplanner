@@ -4,19 +4,32 @@ import api, { isMockMode } from '../api';
 import clsx from 'clsx';
 
 function TVPage() {
-  const [plan, setPlan] = useState([]);
+  const [todayPlan, setTodayPlan] = useState([]);
+  const [tomorrowPlan, setTomorrowPlan] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPlan();
-    const interval = setInterval(fetchPlan, 30000); // Refresh every 30s
+    fetchPlans();
+    const interval = setInterval(fetchPlans, 30000); // Refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
-  const fetchPlan = async () => {
+  const fetchPlans = async () => {
     try {
-      const res = await api.get('/plan');
-      setPlan(res.data);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const todayStr = today.toISOString().split('T')[0];
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      const [resToday, resTomorrow] = await Promise.all([
+          api.get(`/plan?target_date=${todayStr}`),
+          api.get(`/plan?target_date=${tomorrowStr}`)
+      ]);
+
+      setTodayPlan(resToday.data);
+      setTomorrowPlan(resTomorrow.data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching plan", error);
@@ -27,26 +40,40 @@ function TVPage() {
 
   // Group items by Employee
   const groupedPlan = {};
-  plan.forEach(item => {
-      const employeeName = item.employee.name; // Keep number? User said yes.
-      if (!groupedPlan[employeeName]) {
-          groupedPlan[employeeName] = {
-              employee: item.employee,
+
+  // Helper to init group
+  const getGroup = (employee) => {
+      const name = employee.name;
+      if (!groupedPlan[name]) {
+          groupedPlan[name] = {
+              employee: employee,
               active: [],
               planned: [],
+              upcoming: [], // For tomorrow
               isSick: false
           };
       }
-      if (item.machine_group.name === 'Sjuk') {
-          groupedPlan[employeeName].isSick = true;
-      }
+      return groupedPlan[name];
+  };
 
-      // Default to active unless explicitly planned
-      if (item.status === 'active') {
-          groupedPlan[employeeName].active.push(item);
-      } else {
-          groupedPlan[employeeName].planned.push(item);
+  // Process Today
+  todayPlan.forEach(item => {
+      const group = getGroup(item.employee);
+      if (item.machine_group.name === 'Sjuk') {
+          group.isSick = true;
       }
+      if (item.status === 'active') {
+          group.active.push(item);
+      } else {
+          group.planned.push(item);
+      }
+  });
+
+  // Process Tomorrow
+  tomorrowPlan.forEach(item => {
+      const group = getGroup(item.employee);
+      // We don't care about status for tomorrow, just list them
+      group.upcoming.push(item);
   });
 
   const sortedEmployees = Object.keys(groupedPlan).sort();
@@ -103,7 +130,7 @@ function TVPage() {
 
                         <div className="p-4 flex-1 flex flex-col gap-4">
                             {/* Active Section */}
-                            {group.active.length > 0 && (
+                            {group.active.length > 0 && !group.isSick && (
                                 <div className="flex flex-col gap-3">
                                     {group.active.map(item => (
                                         <div key={item.id} className="bg-gray-900/50 rounded-lg p-3 border-l-4 border-green-500 shadow-sm">
@@ -121,7 +148,7 @@ function TVPage() {
                             )}
 
                             {/* Planned Section */}
-                            {group.planned.length > 0 && (
+                            {group.planned.length > 0 && !group.isSick && (
                                 <div className={clsx(group.active.length > 0 && "mt-2 pt-2 border-t border-gray-700")}>
                                     <h3 className="text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-2">Kommande</h3>
                                     <div className="flex flex-col gap-2">
@@ -134,6 +161,25 @@ function TVPage() {
                                                     </div>
                                                     <div className="text-sm font-mono text-gray-400 whitespace-nowrap">
                                                         {item.goal > 0 ? item.goal : '-'} st
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Upcoming Section (Tomorrow) */}
+                            {group.upcoming.length > 0 && !group.isSick && (
+                                <div className={clsx((group.active.length > 0 || group.planned.length > 0) && "mt-2 pt-2 border-t border-gray-700")}>
+                                    <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2">Imorgon</h3>
+                                    <div className="flex flex-col gap-2">
+                                        {group.upcoming.map(item => (
+                                            <div key={item.id} className="bg-gray-750/30 rounded p-2 border-l-2 border-blue-500/30 opacity-60">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="truncate pr-2">
+                                                        <div className="text-xs text-gray-500 mb-0.5">{item.machine_group.name}</div>
+                                                        <div className="text-sm font-medium text-gray-300 truncate">{item.article.name}</div>
                                                     </div>
                                                 </div>
                                             </div>
