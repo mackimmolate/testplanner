@@ -13,10 +13,18 @@ export const getMockData = () => {
     return Promise.resolve({ data: initialData });
 };
 
-export const getMockPlan = () => {
+export const getMockPlan = (targetDate) => {
     const plan = JSON.parse(localStorage.getItem('planner_plan') || '[]');
+    // Filter by date if provided, otherwise return all? No, API usually returns for date.
+    // The backend endpoint `GET /plan` takes a `target_date`.
+
+    // Default to today if not provided (though wrapper usually handles this)
+    const dateToFilter = targetDate || new Date().toISOString().split('T')[0];
+
+    const filteredPlan = plan.filter(item => item.date === dateToFilter);
+
     // Join with initial data to provide full objects
-    const populatedPlan = plan.map(item => {
+    const populatedPlan = filteredPlan.map(item => {
         const employee = initialData.employees.find(e => e.id === item.employee_id);
         const article = initialData.articles.find(a => a.id === item.article_id);
         const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
@@ -40,7 +48,12 @@ export const createMockPlanItem = (item) => {
     goals[`${item.article_id}-${item.machine_group_id}`] = item.goal;
     localStorage.setItem('planner_default_goals', JSON.stringify(goals));
 
-    return Promise.resolve({ data: newItem });
+    // Return populated item
+    const employee = initialData.employees.find(e => e.id === item.employee_id);
+    const article = initialData.articles.find(a => a.id === item.article_id);
+    const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
+
+    return Promise.resolve({ data: { ...newItem, employee, article, machine_group } });
 };
 
 export const updateMockPlanItem = (id, updates) => {
@@ -49,7 +62,14 @@ export const updateMockPlanItem = (id, updates) => {
     if (index !== -1) {
         plan[index] = { ...plan[index], ...updates };
         localStorage.setItem('planner_plan', JSON.stringify(plan));
-        return Promise.resolve({ data: plan[index] });
+
+        // Populate return
+        const item = plan[index];
+        const employee = initialData.employees.find(e => e.id === item.employee_id);
+        const article = initialData.articles.find(a => a.id === item.article_id);
+        const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
+
+        return Promise.resolve({ data: { ...item, employee, article, machine_group } });
     }
     return Promise.reject(new Error("Not found"));
 };

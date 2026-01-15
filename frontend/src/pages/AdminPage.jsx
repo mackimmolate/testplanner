@@ -13,10 +13,11 @@ function AdminPage() {
   const [selectedArticle, setSelectedArticle] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [goal, setGoal] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (selectedGroup && selectedArticle) {
@@ -28,7 +29,7 @@ function AdminPage() {
     try {
       const [dataRes, planRes] = await Promise.all([
         api.get('/data'),
-        api.get('/plan')
+        api.get(`/plan?target_date=${selectedDate}`)
       ]);
       setData(dataRes.data);
       setPlan(planRes.data);
@@ -60,8 +61,8 @@ function AdminPage() {
         article_id: parseInt(selectedArticle),
         machine_group_id: parseInt(selectedGroup),
         goal: parseInt(goal),
-        date: new Date().toLocaleDateString('sv-SE'),
-        status: 'planned' // Default to planned
+        date: selectedDate,
+        status: 'active' // Default to active
       });
       // Reset form (keep group maybe?)
       setSelectedArticle('');
@@ -135,7 +136,18 @@ function AdminPage() {
 
         {/* Add Task Form */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Lägg till uppgift</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700">Lägg till uppgift</h2>
+            <div>
+                <label className="text-sm font-medium text-gray-700 mr-2">Planeringsdatum:</label>
+                <input
+                    type="date"
+                    className="border border-gray-300 rounded-md p-1"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                />
+            </div>
+          </div>
           <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Maskingrupp</label>

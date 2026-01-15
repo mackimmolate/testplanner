@@ -21,7 +21,12 @@ const apiWrapper = {
     get: async (url) => {
         if (useMock) {
             if (url === '/data') return getMockData();
-            if (url === '/plan') return getMockPlan();
+            if (url.startsWith('/plan')) {
+                // Parse target_date from query string
+                const params = new URLSearchParams(url.split('?')[1]);
+                const targetDate = params.get('target_date');
+                return getMockPlan(targetDate);
+            }
             if (url.startsWith('/default-goal')) {
                 const params = new URLSearchParams(url.split('?')[1]);
                 return getMockDefaultGoal(params.get('article_id'), params.get('machine_group_id'));
