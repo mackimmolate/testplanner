@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api';
+import api, { isMockMode } from '../api';
 import clsx from 'clsx';
 
 function TVPage() {
@@ -43,7 +43,14 @@ function TVPage() {
   return (
     <div className="min-h-screen bg-gray-900 p-4 text-white">
       <header className="flex justify-between items-center mb-6 px-4">
-          <h1 className="text-4xl font-bold tracking-wider text-blue-400">PRODUKTIONSPLANERING</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-bold tracking-wider text-blue-400">PRODUKTIONSPLANERING</h1>
+            {isMockMode && (
+                <span className="bg-yellow-900/50 text-yellow-200 px-3 py-1 rounded-full text-sm border border-yellow-700">
+                    Demo Mode
+                </span>
+            )}
+          </div>
           <div className="text-2xl font-mono text-gray-400">
               {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>

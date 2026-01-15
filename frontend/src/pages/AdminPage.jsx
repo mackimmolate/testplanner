@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api';
+import api, { isMockMode } from '../api';
 import clsx from 'clsx';
 
 function AdminPage() {
@@ -116,7 +116,14 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">Planeringsverktyg (Admin)</h1>
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">Planeringsverktyg (Admin)</h1>
+            {isMockMode && (
+                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-200">
+                    Demo Mode (Lokal data)
+                </span>
+            )}
+        </div>
 
         {/* Add Task Form */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
