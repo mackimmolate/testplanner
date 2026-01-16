@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api, { isMockMode } from '../api';
 import clsx from 'clsx';
+import ManagePersonnelModal from '../components/ManagePersonnelModal';
 
 function AdminPage() {
   const [data, setData] = useState({ employees: [], articles: [], machine_groups: [] });
   const [plan, setPlan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
 
   // Inline form state (tracked per employee ID if needed, or a single active form)
   // We'll use a single active form state for simplicity: { employeeId: 1, ... }
@@ -151,6 +153,12 @@ function AdminPage() {
             </div>
 
             <div className="flex items-center gap-4">
+                <button
+                    onClick={() => setIsPersonnelModalOpen(true)}
+                    className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm hover:bg-gray-300 font-medium"
+                >
+                    Hantera Personal
+                </button>
                 <div className="flex flex-col items-end">
                     <label className="text-xs font-bold text-gray-500 uppercase">Planeringsdatum</label>
                     <input
@@ -167,6 +175,13 @@ function AdminPage() {
                 )}
             </div>
         </div>
+
+        <ManagePersonnelModal
+            isOpen={isPersonnelModalOpen}
+            onClose={() => setIsPersonnelModalOpen(false)}
+            employees={data.employees}
+            onUpdate={fetchData}
+        />
 
         {/* Employee Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

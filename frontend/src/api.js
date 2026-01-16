@@ -5,7 +5,9 @@ import {
     createMockPlanItem,
     updateMockPlanItem,
     deleteMockPlanItem,
-    getMockDefaultGoal
+    getMockDefaultGoal,
+    createMockEmployee,
+    deleteMockEmployee
 } from './mockApi';
 
 // Determine if we should use mock mode
@@ -37,6 +39,7 @@ const apiWrapper = {
     post: async (url, data) => {
         if (useMock) {
             if (url === '/plan') return createMockPlanItem(data);
+            if (url === '/employees') return createMockEmployee(data);
         }
         return api.post(url, data);
     },
@@ -54,6 +57,10 @@ const apiWrapper = {
             if (url.startsWith('/plan/')) {
                 const id = url.split('/').pop();
                 return deleteMockPlanItem(id);
+            }
+            if (url.startsWith('/employees/')) {
+                const id = url.split('/').pop();
+                return deleteMockEmployee(id);
             }
         }
         return api.delete(url);

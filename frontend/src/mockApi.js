@@ -9,8 +9,34 @@ if (!localStorage.getItem('planner_default_goals')) {
     localStorage.setItem('planner_default_goals', JSON.stringify({}));
 }
 
+// Initialize employees if empty (copy from initial)
+if (!localStorage.getItem('planner_employees')) {
+    localStorage.setItem('planner_employees', JSON.stringify(initialData.employees));
+}
+
 export const getMockData = () => {
-    return Promise.resolve({ data: initialData });
+    const employees = JSON.parse(localStorage.getItem('planner_employees'));
+    return Promise.resolve({
+        data: {
+            ...initialData,
+            employees: employees
+        }
+    });
+};
+
+export const createMockEmployee = (employee) => {
+    const employees = JSON.parse(localStorage.getItem('planner_employees'));
+    const newEmployee = { ...employee, id: Date.now() };
+    employees.push(newEmployee);
+    localStorage.setItem('planner_employees', JSON.stringify(employees));
+    return Promise.resolve({ data: newEmployee });
+};
+
+export const deleteMockEmployee = (id) => {
+    let employees = JSON.parse(localStorage.getItem('planner_employees'));
+    employees = employees.filter(e => e.id !== parseInt(id));
+    localStorage.setItem('planner_employees', JSON.stringify(employees));
+    return Promise.resolve({ data: { ok: true } });
 };
 
 export const getMockPlan = (targetDate) => {
@@ -24,12 +50,17 @@ export const getMockPlan = (targetDate) => {
     const filteredPlan = plan.filter(item => item.date === dateToFilter);
 
     // Join with initial data to provide full objects
+    const employees = JSON.parse(localStorage.getItem('planner_employees'));
     const populatedPlan = filteredPlan.map(item => {
-        const employee = initialData.employees.find(e => e.id === item.employee_id);
+        const employee = employees.find(e => e.id === item.employee_id);
         const article = initialData.articles.find(a => a.id === item.article_id);
         const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
+
+        // Handle deleted employees safely
+        if (!employee) return null;
+
         return { ...item, employee, article, machine_group };
-    });
+    }).filter(item => item !== null);
     return Promise.resolve({ data: populatedPlan });
 };
 
@@ -49,7 +80,8 @@ export const createMockPlanItem = (item) => {
     localStorage.setItem('planner_default_goals', JSON.stringify(goals));
 
     // Return populated item
-    const employee = initialData.employees.find(e => e.id === item.employee_id);
+    const employees = JSON.parse(localStorage.getItem('planner_employees'));
+    const employee = employees.find(e => e.id === item.employee_id);
     const article = initialData.articles.find(a => a.id === item.article_id);
     const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
 
@@ -65,7 +97,8 @@ export const updateMockPlanItem = (id, updates) => {
 
         // Populate return
         const item = plan[index];
-        const employee = initialData.employees.find(e => e.id === item.employee_id);
+        const employees = JSON.parse(localStorage.getItem('planner_employees'));
+        const employee = employees.find(e => e.id === item.employee_id);
         const article = initialData.articles.find(a => a.id === item.article_id);
         const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
 
