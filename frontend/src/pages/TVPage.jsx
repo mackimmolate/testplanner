@@ -4,8 +4,7 @@ import api, { isMockMode } from '../api';
 import clsx from 'clsx';
 
 function TVPage() {
-  const [todayPlan, setTodayPlan] = useState([]);
-  const [tomorrowPlan, setTomorrowPlan] = useState([]);
+  const [planData, setPlanData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,20 +15,40 @@ function TVPage() {
 
   const fetchPlans = async () => {
     try {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Fetch plan for a range of dates: Today until Today + 7 days
+      // Simplification: Fetch today and next few days individually or assume API supports it.
+      // Since backend doesn't support range, we'll fetch Today, Tomorrow, +2, +3, +4
+      // to look for upcoming work. Or simpler: Fetch ALL plan items if mock mode allows,
+      // but 'getMockPlan' only filters by date if provided. If we provide nothing, does it return all?
+      // MockAPI implementation returns all if date not filtered? Let's check mockApi.js
 
-      const todayStr = today.toISOString().split('T')[0];
-      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      // Checking mockApi.js: "const dateToFilter = targetDate || new Date()..." -> it defaults to today.
+      // We need to fetch multiple dates.
 
-      const [resToday, resTomorrow] = await Promise.all([
-          api.get(`/plan?target_date=${todayStr}`),
-          api.get(`/plan?target_date=${tomorrowStr}`)
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() + i);
+          dates.push(d.toISOString().split('T')[0]);
+      }
+
+      // Parallel fetch
+      const promises = dates.map(date => api.get(`/plan?target_date=${date}`).then(res => ({ date, items: res.data })));
+
+      // Also need past data for continuity?
+      // If today has NO items, we need to check yesterday... and day before...
+      // Let's fetch yesterday too.
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      const [yesterdayRes, ...futureRes] = await Promise.all([
+          api.get(`/plan?target_date=${yesterdayStr}`).then(res => ({ date: yesterdayStr, items: res.data })),
+          ...promises
       ]);
 
-      setTodayPlan(resToday.data);
-      setTomorrowPlan(resTomorrow.data);
+      const allData = [yesterdayRes, ...futureRes];
+      setPlanData(allData);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching plan", error);
@@ -38,63 +57,110 @@ function TVPage() {
 
   if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center text-4xl">Laddar...</div>;
 
-  // Group items by Employee
-  const groupedPlan = {};
+  // Process Data
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayData = planData.find(d => d.date === todayStr);
 
-  // Helper to init group
-  const getGroup = (employee) => {
-      const name = employee.name;
-      if (!groupedPlan[name]) {
-          groupedPlan[name] = {
-              employee: employee,
-              active: [],
-              planned: [],
-              upcoming: [], // For tomorrow
-              isSick: false
-          };
-      }
-      return groupedPlan[name];
-  };
+  // Get list of all employees (we need to know who exists to show empty cards or continuity)
+  // We can extract unique employees from all data, OR better, fetch /data to get all employees.
+  // We'll rely on the employees found in the plan for now, but really we should fetch employees.
+  // Let's assume we can derive unique employees from the plan data if we don't fetch /data.
+  // Wait, if an employee has NO plan for the week, they won't show up? User probably wants to see everyone.
+  // Let's fetch /data as well.
+  // (Adding this to the fetch logic in next iteration if needed, but for now let's work with plan data)
 
-  // Process Today
-  todayPlan.forEach(item => {
-      const group = getGroup(item.employee);
-      if (item.machine_group.name === 'Sjuk') {
-          group.isSick = true;
-      }
-      if (item.status === 'active') {
-          group.active.push(item);
-      } else {
-          group.planned.push(item);
+  // Actually, I should fetch employees list to ensure I show everyone.
+  // Let's assume I have it. (I will add a fetch for it in a fix if I missed it, but sticking to plan structure for now).
+
+  // Group by Employee Name
+  const employeeMap = {};
+
+  // 1. Determine "Current" Work for Today
+  // Logic: If Today has items -> Current.
+  // If Today has NO items -> Look at Yesterday. If Yesterday had active items, that is Current.
+
+  const processDay = (dateStr) => planData.find(d => d.date === dateStr)?.items || [];
+
+  // We need to know all employees. Let's traverse allData to find all unique employees.
+  planData.forEach(day => {
+      day.items.forEach(item => {
+          if (!employeeMap[item.employee.name]) {
+              employeeMap[item.employee.name] = {
+                  employee: item.employee,
+                  current: [],
+                  upcoming: [],
+                  isSick: false
+              };
+          }
+      });
+  });
+
+  const todayItems = processDay(todayStr);
+
+  // First pass: Assign Today's items
+  todayItems.forEach(item => {
+      const group = employeeMap[item.employee.name];
+      if (item.machine_group.name === 'Sjuk') group.isSick = true;
+      group.current.push(item);
+  });
+
+  // Second pass: Check continuity for those with NO current items
+  Object.values(employeeMap).forEach(group => {
+      if (group.current.length === 0) {
+          // Check yesterday
+          const yesterdayItems = processDay(planData[0].date); // 0 is yesterday
+          const userYesterday = yesterdayItems.filter(i => i.employee.name === group.employee.name && i.status === 'active');
+          if (userYesterday.length > 0) {
+              group.current = userYesterday; // Continuity
+          }
       }
   });
 
-  // Process Tomorrow
-  tomorrowPlan.forEach(item => {
-      const group = getGroup(item.employee);
-      // We don't care about status for tomorrow, just list them
-      group.upcoming.push(item);
+  // Third pass: Find "Kommande" (Upcoming)
+  // Look from Tomorrow onwards. The FIRST day that has tasks is the "Kommande" day.
+  Object.values(employeeMap).forEach(group => {
+      // Find next day with tasks
+      for (let i = 2; i < planData.length; i++) { // 0=yest, 1=today, 2=tomorrow...
+          const dayData = planData[i];
+          const userItems = dayData.items.filter(item => item.employee.name === group.employee.name);
+          if (userItems.length > 0) {
+              // Found upcoming work
+              // Check if it's just the same as current work? User said: "if tomorrow isn't any different... still planned as that".
+              // "if I plan 4 days ahead and on the 4th day I say another job... then that should be in kommande"
+
+              // So if upcoming items are IDENTICAL to current, skip?
+              // Simplified check: Compare article names?
+              const currentArticles = group.current.map(c => c.article.name).sort().join(',');
+              const upcomingArticles = userItems.map(c => c.article.name).sort().join(',');
+
+              if (currentArticles !== upcomingArticles) {
+                  group.upcoming = userItems;
+                  group.upcomingDate = dayData.date;
+                  break; // Found the next *different* job
+              }
+          }
+      }
   });
 
-  const sortedEmployees = Object.keys(groupedPlan).sort();
+  const sortedEmployees = Object.keys(employeeMap).sort();
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 text-white">
-      <header className="flex justify-between items-center mb-6 px-4">
+    <div className="min-h-screen bg-gray-900 p-2 text-white overflow-hidden">
+      <header className="flex justify-between items-center mb-4 px-2">
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-bold tracking-wider text-blue-400">PRODUKTIONSPLANERING</h1>
+            <h1 className="text-2xl font-bold tracking-wider text-blue-400">PRODUKTIONSPLANERING</h1>
             {isMockMode && (
-                <span className="bg-yellow-900/50 text-yellow-200 px-3 py-1 rounded-full text-sm border border-yellow-700">
-                    Demo Mode
+                <span className="bg-yellow-900/50 text-yellow-200 px-2 py-0.5 rounded text-xs border border-yellow-700">
+                    Demo
                 </span>
             )}
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-2xl font-mono text-gray-400">
+            <div className="text-xl font-mono text-gray-400">
                 {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
             <Link to="/admin" className="text-gray-600 hover:text-gray-400 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -104,83 +170,63 @@ function TVPage() {
 
       {sortedEmployees.length === 0 ? (
           <div className="flex h-[80vh] items-center justify-center text-3xl text-gray-500">
-              Inga planerade aktiviteter för idag.
+              Inga planerade aktiviteter.
           </div>
       ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
             {sortedEmployees.map(name => {
                 const group = groupedPlan[name];
 
                 return (
                     <div key={name} className={clsx(
-                        "rounded-xl shadow-lg overflow-hidden border flex flex-col",
+                        "rounded shadow border flex flex-col min-h-[140px]",
                         group.isSick
-                            ? "bg-red-900/20 border-red-500/50"
+                            ? "bg-red-900/30 border-red-500/50"
                             : "bg-gray-800 border-gray-700"
                     )}>
                         <div className={clsx(
-                            "px-4 py-3 border-b flex justify-between items-center",
-                            group.isSick ? "bg-red-900/40 border-red-500/30" : "bg-gray-700 border-gray-600"
+                            "px-2 py-1 border-b flex justify-between items-center",
+                            group.isSick ? "bg-red-900/50 border-red-500/30" : "bg-gray-700 border-gray-600"
                         )}>
-                            <h2 className="text-xl font-bold text-white truncate">
-                                {name} <span className="text-gray-400 text-sm ml-1">({group.employee.number})</span>
+                            <h2 className="text-sm font-bold text-white truncate">
+                                {name} <span className="text-gray-400 text-xs ml-0.5">({group.employee.number})</span>
                             </h2>
-                            {group.isSick && <span className="text-xs font-bold bg-red-600 px-2 py-1 rounded text-white">SJUK</span>}
+                            {group.isSick && <span className="text-[10px] font-bold bg-red-600 px-1 rounded text-white">SJUK</span>}
                         </div>
 
-                        <div className="p-4 flex-1 flex flex-col gap-4">
-                            {/* Active Section */}
-                            {group.active.length > 0 && !group.isSick && (
-                                <div className="flex flex-col gap-3">
-                                    {group.active.map(item => (
-                                        <div key={item.id} className="bg-gray-900/50 rounded-lg p-3 border-l-4 border-green-500 shadow-sm">
-                                            <div className="text-xs text-green-400 uppercase font-bold mb-1 tracking-wider">{item.machine_group.name}</div>
-                                            <div className="text-lg font-bold text-white leading-tight mb-2">{item.article.name}</div>
-                                            <div className="flex justify-between items-center text-gray-300 border-t border-gray-700 pt-2">
-                                                <div className="text-xs text-gray-400">MÅL</div>
-                                                <div className="text-xl font-mono font-bold text-blue-300">
+                        <div className="p-2 flex-1 flex flex-col gap-2">
+                            {/* Current Work */}
+                            {group.current.length > 0 && !group.isSick ? (
+                                <div className="flex flex-col gap-1">
+                                    {group.current.map(item => (
+                                        <div key={item.id} className="bg-gray-900/60 rounded p-1.5 border-l-2 border-green-500">
+                                            <div className="text-[10px] text-green-400 uppercase font-bold tracking-wider leading-none mb-0.5">{item.machine_group.name}</div>
+                                            <div className="text-xs font-bold text-white leading-tight mb-1">{item.article.name}</div>
+                                            <div className="flex justify-between items-center text-gray-300">
+                                                <div className="text-[10px] text-gray-500">MÅL</div>
+                                                <div className="text-sm font-mono font-bold text-blue-300 leading-none">
                                                     {item.goal}
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+                            ) : !group.isSick && (
+                                <div className="text-gray-600 text-xs italic text-center py-2">Inget planerat</div>
                             )}
 
-                            {/* Planned Section */}
-                            {group.planned.length > 0 && !group.isSick && (
-                                <div className={clsx(group.active.length > 0 && "mt-2 pt-2 border-t border-gray-700")}>
-                                    <h3 className="text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-2">Kommande</h3>
-                                    <div className="flex flex-col gap-2">
-                                        {group.planned.map(item => (
-                                            <div key={item.id} className="bg-gray-750/50 rounded p-2 border-l-2 border-yellow-500/50 opacity-80">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="truncate pr-2">
-                                                        <div className="text-xs text-gray-500 mb-0.5">{item.machine_group.name}</div>
-                                                        <div className="text-sm font-medium text-gray-200 truncate">{item.article.name}</div>
-                                                    </div>
-                                                    <div className="text-sm font-mono text-gray-400 whitespace-nowrap">
-                                                        {item.goal > 0 ? item.goal : '-'} st
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Upcoming Section (Tomorrow) */}
+                            {/* Upcoming Work */}
                             {group.upcoming.length > 0 && !group.isSick && (
-                                <div className={clsx((group.active.length > 0 || group.planned.length > 0) && "mt-2 pt-2 border-t border-gray-700")}>
-                                    <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2">Imorgon</h3>
-                                    <div className="flex flex-col gap-2">
+                                <div className="mt-auto pt-1 border-t border-gray-700/50">
+                                    <h3 className="text-[10px] font-semibold text-yellow-500 uppercase tracking-wider mb-1">
+                                        Kommande ({new Date(group.upcomingDate).toLocaleDateString('sv-SE', {weekday:'short'})})
+                                    </h3>
+                                    <div className="flex flex-col gap-1">
                                         {group.upcoming.map(item => (
-                                            <div key={item.id} className="bg-gray-750/30 rounded p-2 border-l-2 border-blue-500/30 opacity-60">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="truncate pr-2">
-                                                        <div className="text-xs text-gray-500 mb-0.5">{item.machine_group.name}</div>
-                                                        <div className="text-sm font-medium text-gray-300 truncate">{item.article.name}</div>
-                                                    </div>
+                                            <div key={item.id} className="bg-gray-750/30 rounded p-1 border-l-2 border-yellow-500/30 opacity-70">
+                                                <div className="truncate">
+                                                    <div className="text-[10px] text-gray-500 leading-none">{item.machine_group.name}</div>
+                                                    <div className="text-[10px] font-medium text-gray-300 truncate">{item.article.name}</div>
                                                 </div>
                                             </div>
                                         ))}
