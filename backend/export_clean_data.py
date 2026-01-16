@@ -6,8 +6,13 @@ from constants import SPECIFIC_ARTICLES, SPECIFIC_GROUPS
 def clean_data():
     db = SessionLocal()
     try:
-        # Get employees (keep all from CSV import)
-        employees = [{'id': e.id, 'name': e.name, 'number': e.number} for e in db.query(Employee).all()]
+        # Get employees (keep all from CSV import, minus specific exclusions)
+        excluded_names = ["Mensur Butkovic", "Henric Thylander"]
+        employees = [
+            {'id': e.id, 'name': e.name, 'number': e.number}
+            for e in db.query(Employee).all()
+            if e.name not in excluded_names
+        ]
 
         # Hardcoded Articles
         # We need IDs for them. If they exist in DB, use that ID. If not, we might have an issue with mock consistency vs real DB.

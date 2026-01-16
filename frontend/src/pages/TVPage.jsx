@@ -73,7 +73,7 @@ function TVPage() {
   // Let's assume I have it. (I will add a fetch for it in a fix if I missed it, but sticking to plan structure for now).
 
   // Group by Employee Name
-  const employeeMap = {};
+  const groupedPlan = {};
 
   // 1. Determine "Current" Work for Today
   // Logic: If Today has items -> Current.
@@ -84,8 +84,8 @@ function TVPage() {
   // We need to know all employees. Let's traverse allData to find all unique employees.
   planData.forEach(day => {
       day.items.forEach(item => {
-          if (!employeeMap[item.employee.name]) {
-              employeeMap[item.employee.name] = {
+          if (!groupedPlan[item.employee.name]) {
+              groupedPlan[item.employee.name] = {
                   employee: item.employee,
                   current: [],
                   upcoming: [],
@@ -99,13 +99,13 @@ function TVPage() {
 
   // First pass: Assign Today's items
   todayItems.forEach(item => {
-      const group = employeeMap[item.employee.name];
+      const group = groupedPlan[item.employee.name];
       if (item.machine_group.name === 'Sjuk') group.isSick = true;
       group.current.push(item);
   });
 
   // Second pass: Check continuity for those with NO current items
-  Object.values(employeeMap).forEach(group => {
+  Object.values(groupedPlan).forEach(group => {
       if (group.current.length === 0) {
           // Check yesterday
           const yesterdayItems = processDay(planData[0].date); // 0 is yesterday
@@ -118,7 +118,7 @@ function TVPage() {
 
   // Third pass: Find "Kommande" (Upcoming)
   // Look from Tomorrow onwards. The FIRST day that has tasks is the "Kommande" day.
-  Object.values(employeeMap).forEach(group => {
+  Object.values(groupedPlan).forEach(group => {
       // Find next day with tasks
       for (let i = 2; i < planData.length; i++) { // 0=yest, 1=today, 2=tomorrow...
           const dayData = planData[i];
@@ -142,7 +142,7 @@ function TVPage() {
       }
   });
 
-  const sortedEmployees = Object.keys(employeeMap).sort();
+  const sortedEmployees = Object.keys(groupedPlan).sort();
 
   return (
     <div className="min-h-screen bg-gray-900 p-2 text-white overflow-hidden">
