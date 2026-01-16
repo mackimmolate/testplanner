@@ -104,18 +104,6 @@ function TVPage() {
       group.current.push(item);
   });
 
-  // Second pass: Check continuity for those with NO current items
-  Object.values(groupedPlan).forEach(group => {
-      if (group.current.length === 0) {
-          // Check yesterday
-          const yesterdayItems = processDay(planData[0].date); // 0 is yesterday
-          const userYesterday = yesterdayItems.filter(i => i.employee.name === group.employee.name && i.status === 'active');
-          if (userYesterday.length > 0) {
-              group.current = userYesterday; // Continuity
-          }
-      }
-  });
-
   // Third pass: Find "Kommande" (Upcoming)
   // Look from Tomorrow onwards. The FIRST day that has tasks is the "Kommande" day.
   Object.values(groupedPlan).forEach(group => {
@@ -130,8 +118,8 @@ function TVPage() {
 
               // So if upcoming items are IDENTICAL to current, skip?
               // Simplified check: Compare article names?
-              const currentArticles = group.current.map(c => c.article.name).sort().join(',');
-              const upcomingArticles = userItems.map(c => c.article.name).sort().join(',');
+              const currentArticles = group.current.map(c => c.article?.name || '').sort().join(',');
+              const upcomingArticles = userItems.map(c => c.article?.name || '').sort().join(',');
 
               if (currentArticles !== upcomingArticles) {
                   group.upcoming = userItems;
@@ -200,8 +188,12 @@ function TVPage() {
                                 <div className="flex flex-col gap-1">
                                     {group.current.map(item => (
                                         <div key={item.id} className="bg-gray-900/60 rounded p-1.5 border-l-2 border-green-500">
-                                            <div className="text-[10px] text-green-400 uppercase font-bold tracking-wider leading-none mb-0.5">{item.machine_group.name}</div>
-                                            <div className="text-xs font-bold text-white leading-tight mb-1">{item.article.name}</div>
+                                            <div className="text-[10px] text-green-400 uppercase font-bold tracking-wider leading-none mb-0.5">
+                                                {item.machine_group?.name || 'Okänd'}
+                                            </div>
+                                            <div className="text-xs font-bold text-white leading-tight mb-1">
+                                                {item.article?.name || '-'}
+                                            </div>
                                             <div className="flex justify-between items-center text-gray-300">
                                                 <div className="text-[10px] text-gray-500">MÅL</div>
                                                 <div className="text-sm font-mono font-bold text-blue-300 leading-none">
@@ -225,8 +217,12 @@ function TVPage() {
                                         {group.upcoming.map(item => (
                                             <div key={item.id} className="bg-gray-750/30 rounded p-1 border-l-2 border-yellow-500/30 opacity-70">
                                                 <div className="truncate">
-                                                    <div className="text-[10px] text-gray-500 leading-none">{item.machine_group.name}</div>
-                                                    <div className="text-[10px] font-medium text-gray-300 truncate">{item.article.name}</div>
+                                                    <div className="text-[10px] text-gray-500 leading-none">
+                                                        {item.machine_group?.name || 'Okänd'}
+                                                    </div>
+                                                    <div className="text-[10px] font-medium text-gray-300 truncate">
+                                                        {item.article?.name || '-'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

@@ -41,17 +41,31 @@ export const deleteMockEmployee = (id) => {
 
 export const getMockPlan = (targetDate) => {
     const plan = JSON.parse(localStorage.getItem('planner_plan') || '[]');
-    // Filter by date if provided, otherwise return all? No, API usually returns for date.
-    // The backend endpoint `GET /plan` takes a `target_date`.
+    const employees = JSON.parse(localStorage.getItem('planner_employees'));
 
-    // Default to today if not provided (though wrapper usually handles this)
-    const dateToFilter = targetDate || new Date().toISOString().split('T')[0];
+    // Default to today if not provided
+    const dateLimit = targetDate || new Date().toISOString().split('T')[0];
 
-    const filteredPlan = plan.filter(item => item.date === dateToFilter);
+    // Logic: Carry over. Find latest plan item <= dateLimit for each employee
+    const effectivePlan = [];
+
+    employees.forEach(employee => {
+        // Find items for this employee
+        const employeeItems = plan.filter(p => p.employee_id === employee.id && p.date <= dateLimit);
+        // Sort by date desc, then id desc (to break ties)
+        employeeItems.sort((a, b) => {
+            if (a.date !== b.date) return b.date.localeCompare(a.date);
+            return b.id - a.id;
+        });
+
+        const latest = employeeItems[0];
+        if (latest && latest.machine_group_id) { // Only if not "Void" (null group)
+            effectivePlan.push(latest);
+        }
+    });
 
     // Join with initial data to provide full objects
-    const employees = JSON.parse(localStorage.getItem('planner_employees'));
-    const populatedPlan = filteredPlan.map(item => {
+    const populatedPlan = effectivePlan.map(item => {
         const employee = employees.find(e => e.id === item.employee_id);
         const article = initialData.articles.find(a => a.id === item.article_id);
         const machine_group = initialData.machine_groups.find(m => m.id === item.machine_group_id);
@@ -65,7 +79,11 @@ export const getMockPlan = (targetDate) => {
 };
 
 export const createMockPlanItem = (item) => {
-    const plan = JSON.parse(localStorage.getItem('planner_plan') || '[]');
+    let plan = JSON.parse(localStorage.getItem('planner_plan') || '[]');
+
+    // Remove existing item for this employee on this date (to avoid duplicates/ambiguity)
+    plan = plan.filter(p => !(p.employee_id === item.employee_id && p.date === item.date));
+
     const newItem = {
         ...item,
         id: Date.now(),
@@ -74,10 +92,12 @@ export const createMockPlanItem = (item) => {
     plan.push(newItem);
     localStorage.setItem('planner_plan', JSON.stringify(plan));
 
-    // Save default goal
-    const goals = JSON.parse(localStorage.getItem('planner_default_goals') || '{}');
-    goals[`${item.article_id}-${item.machine_group_id}`] = item.goal;
-    localStorage.setItem('planner_default_goals', JSON.stringify(goals));
+    // Save default goal (only if article/group provided)
+    if (item.article_id && item.machine_group_id) {
+        const goals = JSON.parse(localStorage.getItem('planner_default_goals') || '{}');
+        goals[`${item.article_id}-${item.machine_group_id}`] = item.goal;
+        localStorage.setItem('planner_default_goals', JSON.stringify(goals));
+    }
 
     // Return populated item
     const employees = JSON.parse(localStorage.getItem('planner_employees'));
