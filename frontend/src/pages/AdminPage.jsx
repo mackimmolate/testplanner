@@ -111,13 +111,20 @@ function AdminPage() {
     }
   };
 
-  const deleteTask = async (id) => {
-      if(!confirm("Är du säker på att du vill ta bort uppgiften?")) return;
+  const clearTask = async (task) => {
+      if(!confirm("Vill du ta bort uppgiften?")) return;
       try {
-          await api.delete(`/plan/${id}`);
+          await api.post('/plan', {
+              employee_id: task.employee.id,
+              date: selectedDate,
+              machine_group_id: null,
+              article_id: null,
+              goal: 0,
+              status: 'active'
+          });
           fetchData();
       } catch (error) {
-          console.error("Error deleting task", error);
+          console.error("Error clearing task", error);
       }
   }
 
@@ -220,17 +227,17 @@ function AdminPage() {
                                     task.status === 'active' ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"
                                 )}>
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className="font-bold text-gray-700">{task.machine_group.name}</span>
-                                        <button onClick={() => deleteTask(task.id)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="font-bold text-gray-700">{task.machine_group?.name}</span>
+                                        <button onClick={() => clearTask(task)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                                                 <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
                                             </svg>
                                         </button>
                                     </div>
 
-                                    {task.machine_group.name !== 'Sjuk' && (
+                                    {task.machine_group?.name !== 'Sjuk' && (
                                         <>
-                                            <div className="text-gray-900 font-medium mb-2">{task.article.name}</div>
+                                            <div className="text-gray-900 font-medium mb-2">{task.article?.name}</div>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1">
                                                     <span className="text-xs text-gray-500">Mål:</span>
@@ -245,15 +252,7 @@ function AdminPage() {
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    {task.status === 'planned' ? (
-                                                        <span onClick={() => updateStatus(task.id, 'active')} className="cursor-pointer text-xs bg-gray-200 hover:bg-green-200 text-gray-700 px-1.5 py-0.5 rounded border border-gray-300">
-                                                            Starta
-                                                        </span>
-                                                    ) : (
-                                                        <span onClick={() => updateStatus(task.id, 'planned')} className="cursor-pointer text-xs bg-green-200 hover:bg-yellow-200 text-green-800 px-1.5 py-0.5 rounded border border-green-300">
-                                                            Pågående
-                                                        </span>
-                                                    )}
+                                                    {/* Status toggle removed as per request */}
                                                 </div>
                                             </div>
                                         </>
