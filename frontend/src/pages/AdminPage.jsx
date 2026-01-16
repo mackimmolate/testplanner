@@ -312,7 +312,7 @@ function AdminPage() {
                                     <div className="mt-2 border-t border-gray-200 pt-1">
                                         <input
                                             type="text"
-                                            className="w-full text-xs text-gray-500 italic bg-transparent border-none p-0 focus:ring-0 placeholder-gray-400"
+                                            className="w-full text-gray-700 font-bold bg-transparent border-none p-0 focus:ring-0 placeholder-gray-400"
                                             placeholder="Lägg till kommentar..."
                                             defaultValue={task.comment || ''}
                                             onBlur={(e) => {
