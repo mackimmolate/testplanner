@@ -40,6 +40,7 @@ class PlanItem(Base):
     goal = Column(Integer, default=0)
     quantity_done = Column(Integer, default=0)
     status = Column(String, default=TaskStatus.PLANNED)
+    comment = Column(String, nullable=True)
 
     employee = relationship("Employee")
     article = relationship("Article")

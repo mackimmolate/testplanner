@@ -61,6 +61,7 @@ class PlanItemCreate(BaseModel):
     goal: int
     date: date
     status: models.TaskStatus = models.TaskStatus.PLANNED
+    comment: Optional[str] = None
 
 class PlanItemUpdate(BaseModel):
     employee_id: Optional[int] = None
@@ -69,6 +70,7 @@ class PlanItemUpdate(BaseModel):
     goal: Optional[int] = None
     status: Optional[models.TaskStatus] = None
     quantity_done: Optional[int] = None
+    comment: Optional[str] = None
 
 class PlanItemResponse(BaseModel):
     id: int
@@ -79,6 +81,7 @@ class PlanItemResponse(BaseModel):
     goal: int
     quantity_done: int
     status: models.TaskStatus
+    comment: Optional[str] = None
 
     class Config:
         orm_mode = True

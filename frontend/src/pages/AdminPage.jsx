@@ -19,6 +19,7 @@ function AdminPage() {
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedArticle, setSelectedArticle] = useState('');
   const [goal, setGoal] = useState(0);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -66,6 +67,7 @@ function AdminPage() {
       setSelectedGroup('');
       setSelectedArticle('');
       setGoal(0);
+      setComment('');
   }
 
   const cancelAdding = () => {
@@ -73,15 +75,16 @@ function AdminPage() {
       setSelectedGroup('');
       setSelectedArticle('');
       setGoal(0);
+      setComment('');
   }
 
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!addingForEmployee || !selectedGroup) return;
 
-    // Check if Sjuk
+    // Check if Sjuk or Arbetsledning
     const group = data.machine_groups.find(g => g.id === parseInt(selectedGroup));
-    const isSick = group && group.name === 'Sjuk';
+    const isSick = group && (group.name === 'Sjuk' || group.name === 'Arbetsledning');
 
     if (!isSick && !selectedArticle) return; // Article required if not sick
 
@@ -92,7 +95,8 @@ function AdminPage() {
         machine_group_id: parseInt(selectedGroup),
         goal: isSick ? 0 : parseInt(goal),
         date: selectedDate,
-        status: 'active'
+        status: 'active',
+        comment: comment || null
       });
 
       cancelAdding();
@@ -168,12 +172,38 @@ function AdminPage() {
                 </button>
                 <div className="flex flex-col items-end">
                     <label className="text-xs font-bold text-gray-500 uppercase">Planeringsdatum</label>
-                    <input
-                        type="date"
-                        className="border border-gray-300 rounded-md p-1 bg-white shadow-sm"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                    />
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => {
+                                const d = new Date(selectedDate);
+                                d.setDate(d.getDate() - 1);
+                                setSelectedDate(d.toISOString().split('T')[0]);
+                            }}
+                            className="bg-gray-200 text-gray-600 p-1 rounded hover:bg-gray-300"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                            </svg>
+                        </button>
+                        <input
+                            type="date"
+                            className="border border-gray-300 rounded-md p-1 bg-white shadow-sm"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                        />
+                        <button
+                            onClick={() => {
+                                const d = new Date(selectedDate);
+                                d.setDate(d.getDate() + 1);
+                                setSelectedDate(d.toISOString().split('T')[0]);
+                            }}
+                            className="bg-gray-200 text-gray-600 p-1 rounded hover:bg-gray-300"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 {isMockMode && (
                     <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-200">
@@ -196,9 +226,9 @@ function AdminPage() {
                 const employeeTasks = groupedPlan[employee.id] || [];
                 const isAdding = addingForEmployee === employee.id;
 
-                // Determine if adding a 'Sjuk' task currently
+                // Determine if adding a 'Sjuk' or 'Arbetsledning' task currently
                 const currentGroupObj = data.machine_groups.find(g => g.id === parseInt(selectedGroup));
-                const isSickSelected = currentGroupObj && currentGroupObj.name === 'Sjuk';
+                const isSickSelected = currentGroupObj && (currentGroupObj.name === 'Sjuk' || currentGroupObj.name === 'Arbetsledning');
 
                 return (
                     <div key={employee.id} className="bg-white rounded-lg shadow border border-gray-200 flex flex-col h-full">
@@ -257,6 +287,11 @@ function AdminPage() {
                                             </div>
                                         </>
                                     )}
+                                    {task.comment && (
+                                        <div className="mt-1 text-xs text-gray-500 italic border-t border-gray-200 pt-1">
+                                            "{task.comment}"
+                                        </div>
+                                    )}
                                 </div>
                             ))}
 
@@ -302,6 +337,16 @@ function AdminPage() {
                                             </div>
                                         </>
                                     )}
+
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Kommentar (valfritt)"
+                                            className="w-full border border-blue-300 rounded p-1.5 text-sm"
+                                            value={comment}
+                                            onChange={e => setComment(e.target.value)}
+                                        />
+                                    </div>
 
                                     <div className="flex gap-2">
                                         <button type="submit" className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">Spara</button>
