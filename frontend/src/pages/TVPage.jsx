@@ -101,6 +101,10 @@ function TVPage() {
   todayItems.forEach(item => {
       const group = groupedPlan[item.employee.name];
       if (item.machine_group.name === 'Sjuk') group.isSick = true;
+      // Treat Arbetsledning specially for styling if needed,
+      // but user asked for standard color. We just need to know for layout (center text).
+      if (item.machine_group.name === 'Arbetsledning') group.isArbetsledning = true;
+
       group.current.push(item);
   });
 
@@ -186,22 +190,45 @@ function TVPage() {
                             {/* Current Work */}
                             {group.current.length > 0 && !group.isSick ? (
                                 <div className="flex flex-col gap-1">
-                                    {group.current.map(item => (
-                                        <div key={item.id} className="bg-gray-900/60 rounded p-1.5 border-l-2 border-green-500">
-                                            <div className="text-[10px] text-green-400 uppercase font-bold tracking-wider leading-none mb-0.5">
-                                                {item.machine_group?.name || 'Okänd'}
-                                            </div>
-                                            <div className="text-xs font-bold text-white leading-tight mb-1">
-                                                {item.article?.name || '-'}
-                                            </div>
-                                            <div className="flex justify-between items-center text-gray-300">
-                                                <div className="text-[10px] text-gray-500">MÅL</div>
-                                                <div className="text-sm font-mono font-bold text-blue-300 leading-none">
-                                                    {item.goal}
+                                    {group.current.map(item => {
+                                        const isSpecial = item.machine_group?.name === 'Sjuk' || item.machine_group?.name === 'Arbetsledning';
+
+                                        return (
+                                            <div key={item.id} className={clsx(
+                                                "bg-gray-900/60 rounded p-1.5 border-l-2",
+                                                item.machine_group?.name === 'Sjuk' ? "border-red-500" : "border-green-500",
+                                                isSpecial && "flex flex-col justify-center items-center h-20 text-center"
+                                            )}>
+                                                <div className={clsx(
+                                                    "uppercase font-bold tracking-wider leading-none mb-0.5",
+                                                    item.machine_group?.name === 'Sjuk' ? "text-red-400 text-lg" :
+                                                    isSpecial ? "text-green-400 text-lg" : "text-[10px] text-green-400"
+                                                )}>
+                                                    {item.machine_group?.name || 'Okänd'}
                                                 </div>
+
+                                                {!isSpecial && (
+                                                    <>
+                                                        <div className="text-xs font-bold text-white leading-tight mb-1">
+                                                            {item.article?.name || '-'}
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-gray-300 w-full">
+                                                            <div className="text-[10px] text-gray-500">MÅL</div>
+                                                            <div className="text-sm font-mono font-bold text-blue-300 leading-none">
+                                                                {item.goal}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                {item.comment && (
+                                                    <div className="mt-1 text-[10px] text-yellow-200 italic border-t border-gray-700 w-full pt-0.5 text-center break-words">
+                                                        "{item.comment}"
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : !group.isSick && (
                                 <div className="text-gray-600 text-xs italic text-center py-2">Inget planerat</div>
@@ -211,7 +238,7 @@ function TVPage() {
                             {group.upcoming.length > 0 && !group.isSick && (
                                 <div className="mt-auto pt-1 border-t border-gray-700/50">
                                     <h3 className="text-[10px] font-semibold text-yellow-500 uppercase tracking-wider mb-1">
-                                        Kommande ({new Date(group.upcomingDate).toLocaleDateString('sv-SE', {weekday:'short'})})
+                                        Kommande
                                     </h3>
                                     <div className="flex flex-col gap-1">
                                         {group.upcoming.map(item => (
