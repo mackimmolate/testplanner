@@ -130,19 +130,56 @@ def get_plan(target_date: Optional[date] = None, db: Session = Depends(get_db)):
 
 @app.post("/plan", response_model=PlanItemResponse)
 def create_plan_item(item: PlanItemCreate, db: Session = Depends(get_db)):
-    # If adding a new item for a date, we should probably check if one already exists for this employee on this date
-    # and update it or delete it to avoid clutter, but appending is fine if we sort by ID desc in "latest" logic
-    # (but our "latest" logic uses max(date), so multiple items on SAME date is ambiguous).
-    # Ideally we should remove existing item for this employee on this date.
-
-    existing_item = db.query(models.PlanItem).filter(
+    # Support multiple jobs per day (max 4)
+    # Check count of existing items for this employee on this date
+    existing_count = db.query(models.PlanItem).filter(
         models.PlanItem.employee_id == item.employee_id,
-        models.PlanItem.date == item.date
-    ).first()
+        models.PlanItem.date == item.date,
+        models.PlanItem.machine_group_id.isnot(None) # Don't count "void" items if any
+    ).count()
 
-    if existing_item:
-        db.delete(existing_item)
+    # If the user is trying to "clear" (machine_group_id is None), we should probably clear ALL tasks for that day?
+    # Or just add a void record? The logic for "clearing" in AdminPage sends machine_group_id=null.
+    # If we add a void record, the `get_plan` logic filters out items where machine_group_id is None.
+    # But wait, `get_plan` returns ALL items for the max_date.
+    # If we have 3 active items and add 1 void item on the same date, `get_plan` will return 4 items (3 active, 1 void).
+    # The frontend filters out void items? `active_items = [i for i in items if i.machine_group_id is not None]` in backend.
+    # So if we add a void item, it won't show up, but the OLD active items on the same date WILL show up.
+    # So "Clearing" needs to DELETE existing items on that date if we want to wipe the slate.
+
+    if item.machine_group_id is None:
+        # Clearing tasks for this day
+        db.query(models.PlanItem).filter(
+            models.PlanItem.employee_id == item.employee_id,
+            models.PlanItem.date == item.date
+        ).delete()
         db.commit()
+
+        # Add the void item to establish history/stop carry-over?
+        # Actually, if we delete all items on this date, `get_plan` will look for previous date.
+        # We NEED a void item on this date to stop carry over from yesterday.
+        db_item = models.PlanItem(**item.dict())
+        db.add(db_item)
+        db.commit()
+        db.refresh(db_item)
+        return db_item
+
+    # If NOT clearing, check max limit
+    if existing_count >= 4:
+        raise HTTPException(status_code=400, detail="Max 4 jobs per day allowed.")
+
+    # Also, if there was a "void" item on this date (machine_group_id is None), we should remove it so it doesn't block carry-over logic or clutter?
+    # Actually, if we add a real task, that becomes the latest activity.
+    # But `get_plan` fetches ALL items on max_date.
+    # If we have 1 void item and add 1 real item, we return both. The void is filtered out. The real one is shown. Correct.
+
+    # However, if we previously "Cleared" the day, we might have a void item.
+    # We should probably delete any void items for this day before adding a real one, to keep it clean.
+    db.query(models.PlanItem).filter(
+        models.PlanItem.employee_id == item.employee_id,
+        models.PlanItem.date == item.date,
+        models.PlanItem.machine_group_id.is_(None)
+    ).delete()
 
     db_item = models.PlanItem(**item.dict())
     db.add(db_item)
