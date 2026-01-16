@@ -197,11 +197,11 @@ function TVPage() {
                                             <div key={item.id} className={clsx(
                                                 "bg-gray-900/60 rounded p-1.5 border-l-2",
                                                 item.machine_group?.name === 'Sjuk' ? "border-red-500" : "border-green-500",
-                                                isSpecial && "flex flex-col justify-center items-center h-20 text-center"
+                                                isSpecial && "flex flex-col justify-center items-center min-h-[5rem] text-center"
                                             )}>
                                                 <div className={clsx(
                                                     "uppercase font-bold tracking-wider leading-none mb-0.5",
-                                                    item.machine_group?.name === 'Sjuk' ? "text-red-400 text-lg" :
+                                                    item.machine_group?.name === 'Sjuk' ? "text-red-500 text-xl" :
                                                     isSpecial ? "text-green-400 text-lg" : "text-[10px] text-green-400"
                                                 )}>
                                                     {item.machine_group?.name || 'Okänd'}
