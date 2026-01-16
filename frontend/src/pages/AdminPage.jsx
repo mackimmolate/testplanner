@@ -141,6 +141,24 @@ function AdminPage() {
       }
   }
 
+  const updateComment = async (id, newComment) => {
+      try {
+          await api.put(`/plan/${id}`, { comment: newComment });
+          fetchData();
+      } catch (error) {
+          console.error("Error updating comment", error);
+      }
+  }
+
+  // Helper to get ISO week number
+  const getWeek = (date) => {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+  };
+
   if (loading) return <div className="p-4">Laddar...</div>;
 
   // Group plan by Employee
@@ -171,7 +189,9 @@ function AdminPage() {
                     Hantera Personal
                 </button>
                 <div className="flex flex-col items-end">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Planeringsdatum</label>
+                    <div className="text-sm font-bold text-gray-700 mb-1">
+                        {new Date(selectedDate).toLocaleDateString('sv-SE', { weekday: 'long' })} v.{getWeek(new Date(selectedDate))}
+                    </div>
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => {
@@ -265,7 +285,7 @@ function AdminPage() {
                                         </button>
                                     </div>
 
-                                    {task.machine_group?.name !== 'Sjuk' && (
+                                    {task.machine_group?.name !== 'Sjuk' && task.machine_group?.name !== 'Arbetsledning' && (
                                         <>
                                             <div className="text-gray-900 font-medium mb-2">{task.article?.name}</div>
                                             <div className="flex items-center justify-between">
@@ -287,11 +307,20 @@ function AdminPage() {
                                             </div>
                                         </>
                                     )}
-                                    {task.comment && (
-                                        <div className="mt-1 text-xs text-gray-500 italic border-t border-gray-200 pt-1">
-                                            "{task.comment}"
-                                        </div>
-                                    )}
+
+                                    {/* Editable Comment */}
+                                    <div className="mt-2 border-t border-gray-200 pt-1">
+                                        <input
+                                            type="text"
+                                            className="w-full text-xs text-gray-500 italic bg-transparent border-none p-0 focus:ring-0 placeholder-gray-400"
+                                            placeholder="Lägg till kommentar..."
+                                            defaultValue={task.comment || ''}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if(val !== (task.comment || '')) updateComment(task.id, val);
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             ))}
 
