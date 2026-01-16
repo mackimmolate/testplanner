@@ -52,15 +52,20 @@ export const getMockPlan = (targetDate) => {
     employees.forEach(employee => {
         // Find items for this employee
         const employeeItems = plan.filter(p => p.employee_id === employee.id && p.date <= dateLimit);
-        // Sort by date desc, then id desc (to break ties)
-        employeeItems.sort((a, b) => {
-            if (a.date !== b.date) return b.date.localeCompare(a.date);
-            return b.id - a.id;
-        });
+        // Sort by date desc
+        employeeItems.sort((a, b) => b.date.localeCompare(a.date));
 
-        const latest = employeeItems[0];
-        if (latest && latest.machine_group_id) { // Only if not "Void" (null group)
-            effectivePlan.push(latest);
+        if (employeeItems.length > 0) {
+            const maxDate = employeeItems[0].date;
+            // Get ALL items for this date
+            const latestItems = employeeItems.filter(p => p.date === maxDate);
+
+            // Filter out void items and add to effective plan
+            latestItems.forEach(item => {
+                if (item.machine_group_id) {
+                    effectivePlan.push(item);
+                }
+            });
         }
     });
 
@@ -81,8 +86,18 @@ export const getMockPlan = (targetDate) => {
 export const createMockPlanItem = (item) => {
     let plan = JSON.parse(localStorage.getItem('planner_plan') || '[]');
 
-    // Remove existing item for this employee on this date (to avoid duplicates/ambiguity)
-    plan = plan.filter(p => !(p.employee_id === item.employee_id && p.date === item.date));
+    // Check max 4 items
+    if (item.machine_group_id) {
+        const existing = plan.filter(p => p.employee_id === item.employee_id && p.date === item.date && p.machine_group_id);
+        if (existing.length >= 4) {
+            return Promise.reject(new Error("Max 4 jobs per day allowed."));
+        }
+        // Remove void items if adding real task
+        plan = plan.filter(p => !(p.employee_id === item.employee_id && p.date === item.date && !p.machine_group_id));
+    } else {
+        // Clearing: Remove ALL items for this date
+        plan = plan.filter(p => !(p.employee_id === item.employee_id && p.date === item.date));
+    }
 
     const newItem = {
         ...item,

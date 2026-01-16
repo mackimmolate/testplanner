@@ -189,7 +189,7 @@ function TVPage() {
                             {/* Current Work */}
                             {group.current.length > 0 ? (
                                 <div className="flex flex-col gap-1">
-                                    {group.current.map(item => {
+                                    {group.current.map((item, index) => {
                                         const isSpecial = item.machine_group?.name === 'Sjuk' || item.machine_group?.name === 'Arbetsledning';
 
                                         return (
@@ -198,22 +198,27 @@ function TVPage() {
                                                 item.machine_group?.name === 'Sjuk' ? "border-red-500" : "border-green-500",
                                                 isSpecial && "flex flex-col justify-center items-center min-h-[5rem] text-center"
                                             )}>
-                                                <div className={clsx(
-                                                    "uppercase font-bold tracking-wider leading-none mb-0.5",
-                                                    item.machine_group?.name === 'Sjuk' ? "text-red-500 text-xl" :
-                                                    isSpecial ? "text-green-400 text-xl" : "text-[10px] text-green-400"
-                                                )}>
-                                                    {item.machine_group?.name || 'Okänd'}
+                                                <div className="flex justify-between items-start w-full">
+                                                    <div className={clsx(
+                                                        "uppercase font-bold tracking-wider leading-none mb-0.5",
+                                                        item.machine_group?.name === 'Sjuk' ? "text-red-500 text-xl w-full text-center" :
+                                                        isSpecial ? "text-green-400 text-xl w-full text-center" : "text-lg text-green-400"
+                                                    )}>
+                                                        {item.machine_group?.name || 'Okänd'}
+                                                    </div>
+                                                    {!isSpecial && (
+                                                        <span className="text-gray-500 font-mono text-[10px] ml-1">#{index + 1}</span>
+                                                    )}
                                                 </div>
 
                                                 {!isSpecial && (
                                                     <>
-                                                        <div className="text-xs font-bold text-white leading-tight mb-1">
+                                                        <div className="text-lg font-bold text-white leading-tight mb-1">
                                                             {item.article?.name || '-'}
                                                         </div>
                                                         <div className="flex justify-between items-center text-gray-300 w-full">
-                                                            <div className="text-[10px] text-gray-500">MÅL</div>
-                                                            <div className="text-sm font-mono font-bold text-blue-300 leading-none">
+                                                            <div className="text-xs text-gray-500">MÅL</div>
+                                                            <div className="text-xl font-mono font-bold text-blue-300 leading-none">
                                                                 {item.goal}
                                                             </div>
                                                         </div>
