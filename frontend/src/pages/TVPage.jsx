@@ -183,12 +183,11 @@ function TVPage() {
                             <h2 className="text-sm font-bold text-white truncate">
                                 {name} <span className="text-gray-400 text-xs ml-0.5">({group.employee.number})</span>
                             </h2>
-                            {group.isSick && <span className="text-[10px] font-bold bg-red-600 px-1 rounded text-white">SJUK</span>}
                         </div>
 
                         <div className="p-2 flex-1 flex flex-col gap-2">
                             {/* Current Work */}
-                            {group.current.length > 0 && !group.isSick ? (
+                            {group.current.length > 0 ? (
                                 <div className="flex flex-col gap-1">
                                     {group.current.map(item => {
                                         const isSpecial = item.machine_group?.name === 'Sjuk' || item.machine_group?.name === 'Arbetsledning';
@@ -202,7 +201,7 @@ function TVPage() {
                                                 <div className={clsx(
                                                     "uppercase font-bold tracking-wider leading-none mb-0.5",
                                                     item.machine_group?.name === 'Sjuk' ? "text-red-500 text-xl" :
-                                                    isSpecial ? "text-green-400 text-lg" : "text-[10px] text-green-400"
+                                                    isSpecial ? "text-green-400 text-xl" : "text-[10px] text-green-400"
                                                 )}>
                                                     {item.machine_group?.name || 'Okänd'}
                                                 </div>
@@ -222,7 +221,7 @@ function TVPage() {
                                                 )}
 
                                                 {item.comment && (
-                                                    <div className="mt-1 text-[10px] text-yellow-200 italic border-t border-gray-700 w-full pt-0.5 text-center break-words">
+                                                    <div className="mt-1 text-sm text-yellow-200 italic border-t border-gray-700 w-full pt-0.5 text-center break-words">
                                                         "{item.comment}"
                                                     </div>
                                                 )}
@@ -230,7 +229,7 @@ function TVPage() {
                                         );
                                     })}
                                 </div>
-                            ) : !group.isSick && (
+                            ) : (
                                 <div className="text-gray-600 text-xs italic text-center py-2">Inget planerat</div>
                             )}
 
