@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: Bahnschrift, Aptos, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  background: #020617;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #020617;
+  color: #e2e8f0;
+}
