@@ -1,7 +1,13 @@
 import json
-from database import SessionLocal
-from models import Employee, Article, MachineGroup
-from constants import SPECIFIC_ARTICLES, SPECIFIC_GROUPS
+
+try:
+    from .constants import SPECIFIC_ARTICLES, SPECIFIC_GROUPS
+    from .database import SessionLocal
+    from .models import Article, Employee, MachineGroup
+except ImportError:
+    from constants import SPECIFIC_ARTICLES, SPECIFIC_GROUPS
+    from database import SessionLocal
+    from models import Article, Employee, MachineGroup
 
 def clean_data():
     db = SessionLocal()

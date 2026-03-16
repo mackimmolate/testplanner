@@ -1,7 +1,11 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from database import Base
 import enum
+
+try:
+    from .database import Base
+except ImportError:
+    from database import Base
 
 class TaskStatus(str, enum.Enum):
     ACTIVE = "active"
