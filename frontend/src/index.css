@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: Bahnschrift, Aptos, "Segoe UI Variable Text", "Segoe UI", sans-serif;
-  background: #020617;
+  background: #f4f7fb;
 }
 
 html,
@@ -14,6 +14,6 @@ body,
 
 body {
   margin: 0;
-  background: #020617;
-  color: #e2e8f0;
+  background: #f4f7fb;
+  color: #0f172a;
 }

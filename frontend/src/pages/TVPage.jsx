@@ -22,8 +22,8 @@ function SectionPill({ children, tone = 'current' }) {
     <span
       className={clsx(
         'inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]',
-        tone === 'current' && 'bg-sky-400/12 text-sky-200 ring-1 ring-sky-300/20',
-        tone === 'upcoming' && 'bg-amber-300/10 text-amber-100 ring-1 ring-amber-200/15',
+        tone === 'current' && 'border border-sky-200 bg-sky-50 text-sky-700',
+        tone === 'upcoming' && 'border border-amber-200 bg-amber-50 text-amber-700',
       )}
     >
       {children}
@@ -40,10 +40,10 @@ function TaskCard({ item, variant = 'current' }) {
     <article
       className={clsx(
         'rounded-xl border px-3.5 py-3',
-        variant === 'current' && 'border-slate-700 bg-slate-950/65 shadow-[0_10px_24px_rgba(2,6,23,0.28)]',
-        variant === 'upcoming' && 'border-slate-800 bg-slate-950/30',
-        isSick && variant === 'current' && 'border-red-400/45 bg-red-500/8',
-        isSick && variant === 'upcoming' && 'border-red-400/25 bg-red-500/5',
+        variant === 'current' && 'border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.05)]',
+        variant === 'upcoming' && 'border-slate-200/90 bg-slate-50/85',
+        isSick && variant === 'current' && 'border-red-200 bg-red-50/80',
+        isSick && variant === 'upcoming' && 'border-red-200 bg-red-50/50',
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -52,10 +52,10 @@ function TaskCard({ item, variant = 'current' }) {
             className={clsx(
               'truncate text-[11px] font-semibold uppercase tracking-[0.16em]',
               isSick
-                ? 'text-red-200'
+                ? 'text-red-600'
                 : variant === 'current'
-                  ? 'text-sky-200'
-                  : 'text-amber-100/85',
+                  ? 'text-sky-700'
+                  : 'text-amber-700',
             )}
           >
             {item.machine_group?.name ?? 'Okänd'}
@@ -65,7 +65,7 @@ function TaskCard({ item, variant = 'current' }) {
             <div
               className={clsx(
                 'mt-1 truncate text-[15px] font-semibold leading-tight',
-                variant === 'current' ? 'text-slate-100' : 'text-slate-300',
+                variant === 'current' ? 'text-slate-900' : 'text-slate-700',
               )}
             >
               {item.article?.name || '-'}
@@ -76,7 +76,7 @@ function TaskCard({ item, variant = 'current' }) {
             <div
               className={clsx(
                 'mt-1 text-[15px] font-semibold leading-tight',
-                isSick ? 'text-red-100' : 'text-slate-100',
+                isSick ? 'text-red-700' : 'text-slate-800',
               )}
             >
               {isSick ? 'Ej i produktion idag' : 'Arbetar utanför ordinarie flöde'}
@@ -89,8 +89,8 @@ function TaskCard({ item, variant = 'current' }) {
             className={clsx(
               'shrink-0 rounded-lg border px-2.5 py-1.5 text-xs font-semibold',
               variant === 'current'
-                ? 'border-slate-700 bg-slate-900 text-slate-100'
-                : 'border-slate-800 bg-slate-950/60 text-slate-400',
+                ? 'border-slate-200 bg-slate-50 text-slate-700'
+                : 'border-amber-200 bg-amber-50 text-amber-700',
             )}
           >
             Mål {item.goal}
@@ -103,8 +103,8 @@ function TaskCard({ item, variant = 'current' }) {
           className={clsx(
             'mt-3 rounded-lg border px-2.5 py-2 text-xs leading-relaxed',
             variant === 'current'
-              ? 'border-white/8 bg-white/3 text-slate-300'
-              : 'border-white/6 bg-black/10 text-slate-400',
+              ? 'border-slate-200 bg-slate-50 text-slate-600'
+              : 'border-slate-200 bg-white/70 text-slate-500',
           )}
         >
           {item.comment}
@@ -120,27 +120,27 @@ function EmployeePanel({ group }) {
   return (
     <section
       className={clsx(
-        'flex h-full min-h-[280px] flex-col rounded-[22px] border shadow-[0_18px_40px_rgba(2,6,23,0.34)] backdrop-blur-sm',
+        'flex h-full min-h-[280px] flex-col rounded-[22px] border shadow-[0_16px_36px_rgba(148,163,184,0.18)]',
         group.isSick
-          ? 'border-red-400/35 bg-[linear-gradient(180deg,rgba(37,16,22,0.98),rgba(15,23,42,0.95))]'
+          ? 'border-red-200 bg-[linear-gradient(180deg,#fff8f8_0%,#fff1f2_100%)]'
           : isIdle
-            ? 'border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] opacity-80'
-            : 'border-slate-700/80 bg-[linear-gradient(180deg,rgba(22,34,56,0.96),rgba(3,7,18,0.98))]',
+            ? 'border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] opacity-85'
+            : 'border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)]',
       )}
     >
-      <header className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+      <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <div className="min-w-0">
-          <div className="truncate text-base font-semibold text-slate-100">
+          <div className="truncate text-base font-semibold text-slate-900">
             {group.employee.name}
           </div>
         </div>
-        <div className="shrink-0 rounded-full bg-white/4 px-2.5 py-1 font-mono text-xs text-slate-400 ring-1 ring-white/8">
+        <div className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-500">
           {group.employee.number}
         </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="min-h-[154px] rounded-2xl border border-slate-700/70 bg-slate-900/28 p-3.5">
+        <div className="min-h-[154px] rounded-2xl border border-sky-100 bg-sky-50/55 p-3.5">
           <div className="mb-3 flex items-center justify-between gap-2">
             <SectionPill tone="current">Nu</SectionPill>
             {group.current.length > 0 && (
@@ -157,17 +157,17 @@ function EmployeePanel({ group }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/25 px-3 py-6 text-center text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-sky-200 bg-white/70 px-3 py-6 text-center text-sm text-slate-500">
               Ingen plan just nu
             </div>
           )}
         </div>
 
-        <div className="mt-auto rounded-2xl border border-dashed border-slate-800 bg-slate-950/32 p-3.5">
+        <div className="mt-auto rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-3.5">
           <div className="mb-3 flex items-center justify-between gap-2">
             <SectionPill tone="upcoming">Nästa</SectionPill>
             {group.upcomingDate && (
-              <div className="rounded-full bg-white/4 px-2 py-1 text-[11px] text-slate-400 ring-1 ring-white/8">
+              <div className="rounded-full border border-amber-200 bg-white/70 px-2 py-1 text-[11px] text-amber-700">
                 {parseLocalDate(group.upcomingDate).toLocaleDateString('sv-SE', {
                   day: 'numeric',
                   month: 'numeric',
@@ -183,7 +183,7 @@ function EmployeePanel({ group }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-white/6 bg-black/10 px-3 py-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-white/70 px-3 py-4 text-sm text-slate-500">
               Ingen ändring planerad
             </div>
           )}
@@ -247,7 +247,7 @@ function TVPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-3xl text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] text-3xl text-slate-700">
         Laddar...
       </div>
     );
@@ -285,33 +285,33 @@ function TVPage() {
   });
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+    <div className="relative min-h-screen overflow-hidden bg-[#f4f7fb] text-slate-900">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#08101f_0%,#020617_100%)]" />
-        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-sky-500/8 blur-3xl" />
-        <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-amber-300/6 blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#f7fbff_0%,#eef4fb_100%)]" />
+        <div className="absolute -left-16 top-0 h-72 w-72 rounded-full bg-sky-200/30 blur-3xl" />
+        <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-amber-100/50 blur-3xl" />
       </div>
 
       <div className="relative p-4">
-        <header className="mb-5 flex items-center justify-between gap-4 rounded-[22px] border border-white/8 bg-white/4 px-5 py-4 shadow-[0_18px_40px_rgba(2,6,23,0.28)] backdrop-blur-sm">
+        <header className="mb-5 flex items-center justify-between gap-4 rounded-[22px] border border-white/70 bg-white/78 px-5 py-4 shadow-[0_20px_44px_rgba(148,163,184,0.16)] backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                 Produktion
               </div>
-              <h1 className="text-2xl font-semibold tracking-[0.02em] text-slate-50">
+              <h1 className="text-2xl font-semibold tracking-[0.02em] text-slate-900">
                 Planering
               </h1>
             </div>
             {isMockMode && (
-              <span className="rounded-full border border-yellow-700/60 bg-yellow-900/30 px-2.5 py-1 text-xs font-semibold text-yellow-200">
+              <span className="rounded-full border border-yellow-300 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
                 Demo
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden rounded-full border border-white/8 bg-black/10 px-3 py-2 text-sm text-slate-300 md:block">
+            <div className="hidden rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 md:block">
               {new Date().toLocaleDateString('sv-SE', {
                 weekday: 'long',
                 day: 'numeric',
@@ -320,7 +320,7 @@ function TVPage() {
             </div>
             <Link
               to="/admin"
-              className="rounded-full border border-white/8 bg-black/10 p-2.5 text-slate-400 transition-colors hover:text-slate-100"
+              className="rounded-full border border-slate-200 bg-white p-2.5 text-slate-500 transition-colors hover:text-slate-900"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -338,7 +338,7 @@ function TVPage() {
         </header>
 
         {groupedPlan.length === 0 ? (
-          <div className="flex h-[80vh] items-center justify-center rounded-[22px] border border-white/8 bg-white/4 text-2xl text-slate-500 backdrop-blur-sm">
+          <div className="flex h-[80vh] items-center justify-center rounded-[22px] border border-white/70 bg-white/75 text-2xl text-slate-500 shadow-[0_20px_44px_rgba(148,163,184,0.16)] backdrop-blur-sm">
             Ingen plan
           </div>
         ) : (
