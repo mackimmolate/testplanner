@@ -17,25 +17,44 @@ function buildTaskSignature(items) {
     .join('|');
 }
 
-function TaskBlock({ item, muted = false }) {
+function SectionLabel({ children, tone = 'neutral' }) {
+  return (
+    <div
+      className={clsx(
+        'inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em]',
+        tone === 'current' && 'bg-sky-500/12 text-sky-200 ring-1 ring-sky-400/20',
+        tone === 'upcoming' && 'bg-white/6 text-slate-300 ring-1 ring-white/10',
+        tone === 'neutral' && 'bg-white/6 text-slate-300 ring-1 ring-white/10',
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function TaskBlock({ item, tone = 'current' }) {
   const isSpecial =
     item.machine_group?.name === 'Sjuk' || item.machine_group?.name === 'Arbetsledning';
 
   return (
     <div
       className={clsx(
-        'rounded-md border px-2.5 py-2',
-        muted ? 'border-white/10 bg-slate-900/20' : 'border-white/10 bg-slate-900/40',
-        item.machine_group?.name === 'Sjuk' && 'border-red-400/40',
+        'rounded-lg border px-3 py-2.5',
+        tone === 'current' && 'border-slate-600 bg-slate-900/55 shadow-sm',
+        tone === 'upcoming' && 'border-slate-700 bg-slate-900/25',
+        item.machine_group?.name === 'Sjuk' &&
+          (tone === 'current'
+            ? 'border-red-400/50 bg-red-500/8'
+            : 'border-red-400/30 bg-red-500/5'),
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-slate-100">
+          <div className="truncate text-sm font-semibold text-slate-100">
             {item.machine_group?.name ?? 'Okänd'}
           </div>
           {!isSpecial && (
-            <div className={clsx('truncate text-sm', muted ? 'text-slate-400' : 'text-slate-300')}>
+            <div className={clsx('truncate text-sm', tone === 'current' ? 'text-slate-300' : 'text-slate-400')}>
               {item.article?.name || '-'}
             </div>
           )}
@@ -44,8 +63,10 @@ function TaskBlock({ item, muted = false }) {
         {!isSpecial && (
           <div
             className={clsx(
-              'shrink-0 rounded border border-white/10 px-2 py-1 text-xs font-medium',
-              muted ? 'text-slate-400' : 'text-slate-300',
+              'shrink-0 rounded-md border px-2 py-1 text-xs font-medium',
+              tone === 'current'
+                ? 'border-slate-600 bg-slate-800 text-slate-200'
+                : 'border-slate-700 bg-slate-900/50 text-slate-400',
             )}
           >
             Mål {item.goal}
@@ -54,7 +75,7 @@ function TaskBlock({ item, muted = false }) {
       </div>
 
       {item.comment && (
-        <div className="mt-2 border-t border-white/10 pt-2 text-xs text-slate-400">
+        <div className="mt-2 border-t border-white/8 pt-2 text-xs text-slate-400">
           {item.comment}
         </div>
       )}
@@ -116,7 +137,7 @@ function TVPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-3xl text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-3xl text-slate-100">
         Laddar...
       </div>
     );
@@ -154,7 +175,7 @@ function TVPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-900 p-3 text-slate-100">
+    <div className="min-h-screen bg-slate-950 p-3 text-slate-100">
       <header className="mb-4 flex items-center justify-between gap-4 px-1">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-wide text-slate-100">Planering</h1>
@@ -199,57 +220,58 @@ function TVPage() {
             <div
               key={group.employee.id}
               className={clsx(
-                'flex min-h-[170px] flex-col rounded-lg border bg-slate-800/95 shadow-sm',
-                group.isSick ? 'border-red-400/40' : 'border-white/10',
+                'flex min-h-[230px] flex-col rounded-xl border bg-slate-900 shadow-[0_12px_30px_rgba(0,0,0,0.22)]',
+                group.isSick ? 'border-red-400/40' : 'border-slate-800',
               )}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-3 py-2.5">
                 <div className="truncate text-sm font-semibold text-slate-100">
                   {group.employee.name}
                 </div>
-                <div className="shrink-0 font-mono text-[11px] text-slate-400">
+                <div className="shrink-0 font-mono text-[11px] text-slate-500">
                   {group.employee.number}
                 </div>
               </div>
 
               <div className="flex flex-1 flex-col gap-3 p-3">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Nu
+                <section className="min-h-[112px] rounded-lg border border-slate-800 bg-slate-800/40 p-3">
+                  <div className="mb-2">
+                    <SectionLabel tone="current">Nu</SectionLabel>
                   </div>
                   {group.current.length > 0 ? (
-                    <div className="mt-2 space-y-2">
+                    <div className="space-y-2">
                       {group.current.map((item) => (
-                        <TaskBlock key={item.id} item={item} />
+                        <TaskBlock key={item.id} item={item} tone="current" />
                       ))}
                     </div>
                   ) : (
-                    <div className="mt-2 text-sm text-slate-500">Ingen plan</div>
+                    <div className="text-sm text-slate-500">Ingen plan</div>
                   )}
-                </div>
+                </section>
 
-                {group.upcoming.length > 0 && (
-                  <div className="mt-auto border-t border-white/10 pt-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Nästa
+                <section className="rounded-lg border border-dashed border-slate-800 bg-slate-950/35 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <SectionLabel tone="upcoming">Nästa</SectionLabel>
+                    {group.upcomingDate && (
+                      <div className="text-[11px] text-slate-500">
+                        {parseLocalDate(group.upcomingDate).toLocaleDateString('sv-SE', {
+                          day: 'numeric',
+                          month: 'numeric',
+                        })}
                       </div>
-                      {group.upcomingDate && (
-                        <div className="text-[11px] text-slate-500">
-                          {parseLocalDate(group.upcomingDate).toLocaleDateString('sv-SE', {
-                            day: 'numeric',
-                            month: 'numeric',
-                          })}
-                        </div>
-                      )}
-                    </div>
+                    )}
+                  </div>
+
+                  {group.upcoming.length > 0 ? (
                     <div className="space-y-2">
                       {group.upcoming.map((item) => (
-                        <TaskBlock key={item.id} item={item} muted />
+                        <TaskBlock key={item.id} item={item} tone="upcoming" />
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="text-sm text-slate-600">Ingen ändring planerad</div>
+                  )}
+                </section>
               </div>
             </div>
           ))}
