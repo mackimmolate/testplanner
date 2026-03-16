@@ -15,8 +15,8 @@ except ImportError:
 Base.metadata.create_all(bind=engine)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_CSV_PATH = ROOT_DIR / "St\u00e4mplingslogg-2026-01-15.csv"
-EMPLOYEE_NUMBER_COLUMN = "Anst\u00e4llningsnummer"
+DEFAULT_CSV_PATH = ROOT_DIR / "Stämplingslogg-2026-01-15.csv"
+EMPLOYEE_NUMBER_COLUMN = "Anställningsnummer"
 EMPLOYEE_NAME_COLUMN = "Namn"
 
 

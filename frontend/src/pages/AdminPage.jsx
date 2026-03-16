@@ -39,7 +39,7 @@ function AdminPage() {
       setData(dataRes.data);
       setPlan(planRes.data);
     } catch (error) {
-      console.error('Error fetching data', error);
+      console.error('Kunde inte hämta data', error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ function AdminPage() {
           setGoal(String(res.data.goal ?? 0));
         }
       } catch (error) {
-        console.error('Error fetching default goal', error);
+          console.error('Kunde inte hämta standardmål', error);
       }
     };
 
@@ -143,12 +143,12 @@ function AdminPage() {
       cancelAdding();
       await fetchData(selectedDate);
     } catch (error) {
-      console.error('Error adding task', error);
+      console.error('Kunde inte spara uppgift', error);
     }
   };
 
   const clearTask = async (task) => {
-    if (!window.confirm('Vill du ta bort uppgiften?')) {
+    if (!window.confirm('Ta bort uppgift?')) {
       return;
     }
 
@@ -163,7 +163,7 @@ function AdminPage() {
       });
       await fetchData(selectedDate);
     } catch (error) {
-      console.error('Error clearing task', error);
+      console.error('Kunde inte ta bort uppgift', error);
     }
   };
 
@@ -172,7 +172,7 @@ function AdminPage() {
       await api.put(`/plan/${id}`, { goal: newGoal });
       await fetchData(selectedDate);
     } catch (error) {
-      console.error('Error updating goal', error);
+      console.error('Kunde inte uppdatera mål', error);
     }
   };
 
@@ -181,7 +181,7 @@ function AdminPage() {
       await api.put(`/plan/${id}`, { comment: newComment });
       await fetchData(selectedDate);
     } catch (error) {
-      console.error('Error updating comment', error);
+      console.error('Kunde inte uppdatera kommentar', error);
     }
   };
 
@@ -216,7 +216,7 @@ function AdminPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0 7.5-7.5M3 12h18" />
               </svg>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-800">Planeringsverktyg (Admin)</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Planering</h1>
           </div>
 
           <div className="flex items-center gap-4">
@@ -224,7 +224,7 @@ function AdminPage() {
               onClick={() => setIsPersonnelModalOpen(true)}
               className="rounded bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
             >
-              Hantera Personal
+              Personal
             </button>
             <div className="flex flex-col items-end">
               <div className="mb-1 text-sm font-bold text-gray-700">
@@ -305,7 +305,7 @@ function AdminPage() {
                   <button
                     onClick={() => startAdding(employee.id)}
                     className="rounded-full bg-blue-100 p-1.5 text-blue-700 transition-colors hover:bg-blue-200"
-                    title="L\u00e4gg till jobb"
+                    title="Lägg jobb"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                       <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -329,7 +329,7 @@ function AdminPage() {
                       <div className="mb-1 flex items-start justify-between">
                         <div className="flex gap-2">
                           <span className="font-mono text-xs text-gray-400">#{index + 1}</span>
-                          <span className="font-bold text-gray-700">{task.machine_group?.name ?? 'Ok\u00e4nd'}</span>
+                          <span className="font-bold text-gray-700">{task.machine_group?.name ?? 'Okänd'}</span>
                         </div>
                         <button
                           onClick={() => clearTask(task)}
@@ -350,7 +350,7 @@ function AdminPage() {
                           <div className="mb-2 font-medium text-gray-900">{task.article?.name}</div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                              <span className="text-xs text-gray-500">M\u00e5l:</span>
+                              <span className="text-xs text-gray-500">Mål</span>
                               <input
                                 type="number"
                                 min="0"
@@ -383,7 +383,7 @@ function AdminPage() {
                         <input
                           type="text"
                           className="w-full border-none bg-transparent p-0 text-gray-700 placeholder-gray-400 focus:ring-0"
-                          placeholder="L\u00e4gg till kommentar..."
+                          placeholder="Kommentar"
                           defaultValue={task.comment || ''}
                           onBlur={(event) => {
                             const nextValue = event.target.value;
@@ -405,7 +405,7 @@ function AdminPage() {
                           onChange={(event) => setSelectedGroup(event.target.value)}
                           autoFocus
                         >
-                          <option value="">Maskingrupp...</option>
+                          <option value="">Grupp</option>
                           {sortedMachineGroups.map((group) => (
                             <option key={group.id} value={group.id}>{group.name}</option>
                           ))}
@@ -420,7 +420,7 @@ function AdminPage() {
                               value={selectedArticle}
                               onChange={(event) => setSelectedArticle(event.target.value)}
                             >
-                              <option value="">Artikel...</option>
+                              <option value="">Artikel</option>
                               {sortedArticles.map((article) => (
                                 <option key={article.id} value={article.id}>{article.name}</option>
                               ))}
@@ -430,7 +430,7 @@ function AdminPage() {
                             <input
                               type="number"
                               min="0"
-                              placeholder="M\u00e5l"
+                              placeholder="Mål"
                               className="w-full rounded border border-blue-300 p-1.5 text-sm"
                               value={goal}
                               onChange={(event) => setGoal(event.target.value)}
@@ -442,7 +442,7 @@ function AdminPage() {
                       <div>
                         <input
                           type="text"
-                          placeholder="Kommentar (valfritt)"
+                          placeholder="Kommentar"
                           className="w-full rounded border border-blue-300 p-1.5 text-sm"
                           value={comment}
                           onChange={(event) => setComment(event.target.value)}

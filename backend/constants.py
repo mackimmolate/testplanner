@@ -8,6 +8,6 @@ SPECIFIC_ARTICLES = [
 ]
 
 SPECIFIC_GROUPS = [
-    "Sk\u00e4rning", "Injicering", "Limning", "Fr\u00e4sning", "Slipning",
+    "Skärning", "Injicering", "Limning", "Fräsning", "Slipning",
     "Lackering", "Slutkontroll", "Packning", "Arbetsledning", "Sjuk",
 ]

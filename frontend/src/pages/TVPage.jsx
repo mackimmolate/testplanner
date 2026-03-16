@@ -50,7 +50,7 @@ function TVPage() {
         );
         setPlanData(planResponses);
       } catch (error) {
-        console.error('Error fetching plan', error);
+        console.error('Kunde inte hämta plan', error);
       } finally {
         if (isActive) {
           setLoading(false);
@@ -112,7 +112,7 @@ function TVPage() {
     <div className="min-h-screen overflow-hidden bg-gray-900 p-2 text-white">
       <header className="mb-4 flex items-center justify-between px-2">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-wider text-blue-400">PRODUKTIONSPLANERING</h1>
+          <h1 className="text-2xl font-bold tracking-wider text-blue-400">Planering</h1>
           {isMockMode && (
             <span className="rounded border border-yellow-700 bg-yellow-900/50 px-2 py-0.5 text-xs text-yellow-200">
               Demo
@@ -145,7 +145,7 @@ function TVPage() {
 
       {groupedPlan.length === 0 ? (
         <div className="flex h-[80vh] items-center justify-center text-3xl text-gray-500">
-          Inga planerade aktiviteter.
+          Ingen plan
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -198,7 +198,7 @@ function TVPage() {
                                     : 'text-lg font-bold text-green-400',
                               )}
                             >
-                              {item.machine_group?.name ?? 'Ok\u00e4nd'}
+                              {item.machine_group?.name ?? 'Okänd'}
                             </div>
                             {!isSpecial && (
                               <span className="ml-1 font-mono text-[10px] text-gray-500">#{index + 1}</span>
@@ -211,7 +211,7 @@ function TVPage() {
                                 {item.article?.name || '-'}
                               </div>
                               <div className="flex w-full items-center justify-between text-gray-300">
-                                <div className="text-xs text-gray-500">M\u00c5L</div>
+                                <div className="text-xs text-gray-500">Mål</div>
                                 <div className="font-mono text-xl font-bold leading-none text-blue-300">
                                   {item.goal}
                                 </div>
@@ -229,14 +229,14 @@ function TVPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="py-2 text-center text-xs italic text-gray-600">Inget planerat</div>
+                  <div className="py-2 text-center text-xs italic text-gray-600">Ingen plan</div>
                 )}
 
                 {group.upcoming.length > 0 && (
                   <div className="mt-auto border-t border-gray-700/50 pt-1">
                     <div className="mb-1 flex items-center justify-between">
                       <h3 className="text-[10px] font-semibold uppercase tracking-wider text-yellow-500">
-                        Kommande
+                        Nästa
                       </h3>
                       {group.upcomingDate && (
                         <span className="text-[10px] text-gray-500">
@@ -255,7 +255,7 @@ function TVPage() {
                         >
                           <div className="truncate">
                             <div className="text-[10px] leading-none text-gray-500">
-                              {item.machine_group?.name ?? 'Ok\u00e4nd'}
+                              {item.machine_group?.name ?? 'Okänd'}
                             </div>
                             <div className="truncate text-[10px] font-medium text-gray-300">
                               {item.article?.name || '-'}

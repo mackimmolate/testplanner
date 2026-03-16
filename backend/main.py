@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from pathlib import Path
 from typing import List, Optional
@@ -28,6 +29,9 @@ app.add_middleware(
 )
 
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+REFERENCE_DATA_PATH = (
+    Path(__file__).resolve().parent.parent / "frontend" / "src" / "data" / "initialData.json"
+)
 SPECIAL_MACHINE_GROUP_NAMES = {"Sjuk", "Arbetsledning"}
 
 
@@ -105,6 +109,74 @@ def normalize_optional_text(value: Optional[str]) -> Optional[str]:
         return None
     value = value.strip()
     return value or None
+
+
+def repair_mojibake(value: Optional[str]) -> Optional[str]:
+    if value is None or "\u00c3" not in value:
+        return value
+
+    try:
+        return value.encode("latin1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return value
+
+
+def seed_reference_data():
+    if not REFERENCE_DATA_PATH.exists():
+        return
+
+    db = SessionLocal()
+    try:
+        changed = False
+        with REFERENCE_DATA_PATH.open(encoding="utf-8") as handle:
+            reference_data = json.load(handle)
+
+        if db.query(models.Employee).count() == 0:
+            for employee in reference_data["employees"]:
+                db.add(
+                    models.Employee(
+                        id=employee["id"],
+                        name=employee["name"],
+                        number=employee["number"],
+                    )
+                )
+            changed = True
+
+        if db.query(models.Article).count() == 0:
+            for article in reference_data["articles"]:
+                db.add(models.Article(id=article["id"], name=article["name"]))
+            changed = True
+
+        if db.query(models.MachineGroup).count() == 0:
+            for machine_group in reference_data["machine_groups"]:
+                db.add(models.MachineGroup(id=machine_group["id"], name=machine_group["name"]))
+            changed = True
+
+        for employee in db.query(models.Employee).all():
+            repaired_name = repair_mojibake(employee.name)
+            if repaired_name != employee.name:
+                employee.name = repaired_name
+                changed = True
+
+        for article in db.query(models.Article).all():
+            repaired_name = repair_mojibake(article.name)
+            if repaired_name != article.name:
+                article.name = repaired_name
+                changed = True
+
+        for machine_group in db.query(models.MachineGroup).all():
+            repaired_name = repair_mojibake(machine_group.name)
+            if repaired_name != machine_group.name:
+                machine_group.name = repaired_name
+                changed = True
+
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+
+seed_reference_data()
 
 
 def validate_plan_item_references(
@@ -273,11 +345,13 @@ def create_plan_item(item: PlanItemCreate, db: Session = Depends(get_db)):
         if default_goal:
             default_goal.goal = item.goal
         else:
-            db.add(models.DefaultGoal(
-                article_id=item.article_id,
-                machine_group_id=item.machine_group_id,
-                goal=item.goal,
-            ))
+            db.add(
+                models.DefaultGoal(
+                    article_id=item.article_id,
+                    machine_group_id=item.machine_group_id,
+                    goal=item.goal,
+                )
+            )
 
     db.commit()
     db.refresh(db_item)
